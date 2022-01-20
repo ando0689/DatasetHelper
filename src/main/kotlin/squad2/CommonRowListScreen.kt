@@ -4,28 +4,19 @@ package squad2
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.listSaver
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -33,32 +24,51 @@ import androidx.compose.ui.window.rememberWindowState
 import kotlinx.coroutines.launch
 import simpleVerticalScrollbar
 
+interface CommonRowStateHolder {
+    val commonRowState: CommonRowState
+}
 
 @Composable
-fun CommonRowList(data: MutableList<CommonRowState>, onClick: () -> Unit){
+fun <T : CommonRowStateHolder>CommonRowListScreen(modifier: Modifier = Modifier, name: String, description: String? = null, dataHolder: MutableList<T>, onCreateNewItem: () -> T, onClick: (T) -> Unit){
+    Column(modifier) {
+        description?.let {
+            Text(text = it, style = MaterialTheme.typography.caption)
+            Spacer(Modifier.height(8.dp))
+        }
+
+        CommonRowList(name, dataHolder, onCreateNewItem, onClick)
+    }
+}
+
+@Composable
+fun <T : CommonRowStateHolder> CommonRowList(name: String, dataHolder: MutableList<T>, onCreateNewItem: () -> T, onClick: (T) -> Unit){
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+    val data: MutableList<T> = dataHolder
+
+    val onAdd: () -> Unit = {
+        data.filter { it.commonRowState.inEditMode }.forEach { it.commonRowState.submit() }
+        data.add(onCreateNewItem())
+        coroutineScope.launch {
+            listState.scrollToItem(data.size - 1)
+        }
+    }
 
     LazyColumn(
         modifier = Modifier.simpleVerticalScrollbar(listState),
         state = listState) {
         items(data){ item ->
-            CommonRowItem(item,
+            CommonRowItem(item.commonRowState,
                 onDelete = { data.remove(item) },
-                onClick = onClick)
+                onClick = { onClick.invoke(item) })
         }
 
         item {
             Row(modifier = Modifier.padding(16.dp)) {
                 Spacer(modifier = Modifier.weight(1f))
-                IconButton(onClick = {
-                    data.filter { it.inEditMode }.forEach { it.submit() }
-                    data.add(CommonRowState(editMode = true))
-                    coroutineScope.launch {
-                        listState.scrollToItem(data.size - 1)
-                    }
-                }) {
+                OutlinedButton(onClick = onAdd) {
                     Icon(Icons.Default.Add, "Add")
+                    Text(text = "Add $name")
                 }
             }
         }
@@ -172,28 +182,6 @@ fun main() = application {
         state = rememberWindowState(width = 1024.dp, height = 640.dp),
         resizable = true,
         onCloseRequest = ::exitApplication) {
-        CommonRowList(mutableStateListOf(
-            CommonRowState("1"),
-            CommonRowState("2"),
-            CommonRowState("3"),
-            CommonRowState("4"),
-            CommonRowState("5"),
-            CommonRowState("6"),
-            CommonRowState("7"),
-            CommonRowState("8"),
-            CommonRowState("9"),
-            CommonRowState("10"),
-            CommonRowState("11"),
-            CommonRowState("12"),
-            CommonRowState("13"),
-            CommonRowState("14"),
-            CommonRowState("15"),
-            CommonRowState("16"),
-            CommonRowState("17"),
-            CommonRowState("18"),
-            CommonRowState("19"),
-        )){
-
-        }
+        //TODO
     }
 }
