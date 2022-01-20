@@ -7,17 +7,18 @@ import java.io.File
 @Serializable
 data class Squad2Data(
     val `data`: List<Data>,
-    val version: String = "v2.0"
+    val version: String = "v2.0",
+    @Transient val name: String
 ){
     companion object {
         fun open(file: File): Squad2Data? {
             return runCatching {
                 Json.decodeFromString(serializer(), file.readText())
-            }.getOrNull()
+            }.getOrNull()?.copy(name = file.name)
         }
 
-        fun empty(): Squad2Data{
-            return Squad2Data(emptyList())
+        fun new(name: String): Squad2Data {
+            return Squad2Data(name = "$name.json", data = emptyList())
         }
     }
 }

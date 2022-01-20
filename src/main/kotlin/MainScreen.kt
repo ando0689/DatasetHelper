@@ -6,6 +6,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -15,7 +16,36 @@ import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
 
 @Composable
-fun MainScreen(modifier: Modifier = Modifier, composeWindow: ComposeWindow, onSquad2: (Squad2Data?) -> Unit) {
+fun MainScreen(composeWindow: ComposeWindow, screen: Screen.Main, onChangeScreen: (Screen) -> Unit){
+    val modifier = if(screen.alert == null) Modifier else Modifier.blur(radius = 3.dp)
+    MainScreen(modifier, composeWindow,
+        onNewSquad2 = {
+            val newScreen = screen.copy(alertData = AlertData.TextFieldAlertData(
+                screen, "New Data Name", "Enter Name", onSubmit = {
+                    onChangeScreen.invoke(Screen.SQuAD2(Squad2Data.new(it)))
+                }
+            ))
+
+            onChangeScreen.invoke(newScreen)
+        },
+        onSquad2 = { data ->
+            val newScreen = if(data == null){
+                screen.copy(alertData = AlertData.TextAlertData(
+                    screen,
+                    "Bad file",
+                    "Could not open this file. Please try another file."
+                ))
+            } else {
+                Screen.SQuAD2(data)
+            }
+
+            onChangeScreen.invoke(newScreen)
+        })
+}
+
+
+@Composable
+private fun MainScreen(modifier: Modifier = Modifier, composeWindow: ComposeWindow, onNewSquad2: () -> Unit, onSquad2: (Squad2Data?) -> Unit) {
     val fileChooser = rememberFileChooser()
 
     Box(modifier = modifier.fillMaxSize().padding(horizontal = 48.dp), contentAlignment = Alignment.Center) {
@@ -23,9 +53,7 @@ fun MainScreen(modifier: Modifier = Modifier, composeWindow: ComposeWindow, onSq
             Section(modifier = Modifier.weight(1f),
                 title = "SQuAD2 Dataset",
                 description = "Create or edit dataset for training BERT Q&A with SQuAD2 dataset.",
-                onNewClick = {
-                    onSquad2.invoke(Squad2Data.empty())
-                },
+                onNewClick = onNewSquad2,
                 onPickFileClick = {
                     val action = fileChooser.showOpenDialog(composeWindow)
                     if(action == JFileChooser.APPROVE_OPTION){
