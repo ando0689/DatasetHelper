@@ -1,6 +1,7 @@
 // Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 import androidx.compose.material.MaterialTheme
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.material.Surface
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -30,19 +31,21 @@ fun rememberScreen(initialScreen: Screen = Screen.Main()): MutableState<Screen>{
 fun App(composeWindow: ComposeWindow) {
     var currentScreen by rememberScreen()
 
-    MaterialTheme {
-        when(val screen = currentScreen){
-            is Screen.Main -> MainScreen(composeWindow, screen){
-                currentScreen = it
+    AppTheme {
+        Surface {
+            when(val screen = currentScreen){
+                is Screen.Main -> MainScreen(composeWindow, screen){
+                    currentScreen = it
+                }
+                is Screen.SQuAD2 -> SQuAD2Screen(screen.data, onClose = {
+                    currentScreen = Screen.Main(alertData = it)
+                })
             }
-            is Screen.SQuAD2 -> SQuAD2Screen(screen.data, onClose = {
-                currentScreen = Screen.Main(alertData = it)
-            })
-        }
 
-        currentScreen.alert?.let {
-            Alert(it){
-                currentScreen = it.parent
+            currentScreen.alert?.let {
+                Alert(it){
+                    currentScreen = it.parent
+                }
             }
         }
     }

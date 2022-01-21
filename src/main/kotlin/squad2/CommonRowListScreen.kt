@@ -2,6 +2,7 @@
 
 package squad2
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -66,7 +68,7 @@ fun <T : CommonRowStateHolder>CommonRowListScreen(modifier: Modifier = Modifier,
     Column(modifier) {
         description?.let {
             Text(
-                modifier = Modifier.padding(8.dp).fillMaxWidth().background(color = Color(0x88cfd8dc)).padding(16.dp),
+                modifier = Modifier.padding(8.dp).fillMaxWidth().background(color = MaterialTheme.colors.secondary).padding(16.dp),
                 text = it,
                 style = MaterialTheme.typography.body2,
                 textAlign = TextAlign.Justify)
@@ -95,7 +97,8 @@ fun <T : CommonRowStateHolder> CommonRowList(name: String, dataHolder: MutableLi
         modifier = Modifier.simpleVerticalScrollbar(listState),
         state = listState) {
         items(data){ item ->
-            CommonRowItem(item,
+            CommonRowItem(
+                stateHolder = item,
                 onDelete = { data.remove(item) },
                 onClick = { onClick.invoke(item) })
         }
@@ -113,26 +116,29 @@ fun <T : CommonRowStateHolder> CommonRowList(name: String, dataHolder: MutableLi
 }
 
 @Composable
-fun CommonRowItem(stateHolder: CommonRowStateHolder, onDelete: () -> Unit, onClick: () -> Unit){
+fun CommonRowItem(modifier: Modifier = Modifier, stateHolder: CommonRowStateHolder, onDelete: () -> Unit, onClick: () -> Unit){
     val state = stateHolder.commonRowState
 
-    if(state.inEditMode){
-        EditableRowItem(
-            text = state.text,
-            errorText = state.errorText,
-            onTextChanged = { state.text = it },
-            onCancel = { stateHolder.cancel() },
-            onSubmit = { stateHolder.submit() },
-        )
-    } else {
-        RowItem(
-            text = state.text,
-            errorText = state.errorText,
-            onEditClick = { state.inEditMode = true },
-            onDelete = { onDelete.invoke() },
-            onItemClick = onClick
-        )
+    Surface(modifier = modifier.animateContentSize()) {
+        if(state.inEditMode){
+            EditableRowItem(
+                text = state.text,
+                errorText = state.errorText,
+                onTextChanged = { state.text = it },
+                onCancel = { stateHolder.cancel() },
+                onSubmit = { stateHolder.submit() },
+            )
+        } else {
+            RowItem(
+                text = state.text,
+                errorText = state.errorText,
+                onEditClick = { state.inEditMode = true },
+                onDelete = { onDelete.invoke() },
+                onItemClick = onClick
+            )
+        }
     }
+
 }
 
 @Composable
@@ -142,7 +148,7 @@ private fun RowItem(text: String, errorText: String? = null, onEditClick: (Strin
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             elevation = 4.dp,
             shape = MaterialTheme.shapes.small,
-            color = Color(0xffcfd8dc)
+            color = MaterialTheme.colors.secondary
         ) {
             Row(
                 modifier = Modifier.clickable { onItemClick.invoke() },
@@ -151,7 +157,9 @@ private fun RowItem(text: String, errorText: String? = null, onEditClick: (Strin
                 Text(
                     modifier = Modifier.weight(1f).padding(start = 8.dp).padding(vertical = 4.dp),
                     text = text,
-                    style = MaterialTheme.typography.body1
+                    maxLines = 2,
+                    style = MaterialTheme.typography.body1,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 ItemActionIcon(Icons.Default.Edit) {
@@ -168,16 +176,16 @@ private fun RowItem(text: String, errorText: String? = null, onEditClick: (Strin
 
 @Composable
 private fun EditableRowItem(text: String, errorText: String? = null, onTextChanged: (String) -> Unit, onSubmit: () -> Unit, onCancel: () -> Unit){
-    val color = if(errorText == null) Color(0xffeceff1) else Color(0xffffccbc)
-    val borderColor = if(errorText == null) Color(0xffcfd8dc) else Color(0xffd84315)
+    val color = if(errorText == null) MaterialTheme.colors.secondary else Color(0xfffbe9e7)
+    val borderColor = if(errorText == null) MaterialTheme.colors.primary else MaterialTheme.colors.error
 
     ErrorAwareContainer(errorText) {
         Surface(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            elevation = 4.dp,
             shape = MaterialTheme.shapes.small,
             color = color,
-            border = BorderStroke(width = 3.dp, color = borderColor)
+            border = BorderStroke(width = 3.dp, color = borderColor),
+            elevation = 4.dp,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 BasicTextField(
@@ -204,7 +212,7 @@ private fun ErrorAwareContainer(errorText: String?, content: @Composable () -> U
     Column {
         content()
         errorText?.let {
-            Text(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp), text = it, style = MaterialTheme.typography.caption.copy(color = Color(0xffd84315)))
+            Text(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp), text = it, style = MaterialTheme.typography.caption.copy(color = MaterialTheme.colors.error))
         }
     }
 }
