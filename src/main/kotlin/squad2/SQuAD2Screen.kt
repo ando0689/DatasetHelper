@@ -113,9 +113,7 @@ fun AnsweresScreen(state: QaState, onScreenDataChange: (CommonRowStateHolder?) -
         AppBar(
             text = "Answers",
             onBack = { onScreenDataChange.invoke(state.parent) },
-            onSave = {
-                //TODO
-            }
+            onSave = { state.save() }
         )
     }
 

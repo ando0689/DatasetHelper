@@ -29,7 +29,34 @@ import simpleVerticalScrollbar
 interface CommonRowStateHolder {
     val commonRowState: CommonRowState
     fun isValid(): Boolean = true
+    fun errorText(): String = "Incorrect Value"
+
+    fun submit() = commonRowState.apply {
+        if(validate()) {
+            internalText = text
+            inEditMode = false
+        }
+    }
+
+    fun validate(): Boolean = commonRowState.run {
+        val isValid = isValid()
+        errorText = if(isValid){ null } else { errorText() }
+        isValid
+    }
+
+    fun cancel() = commonRowState.apply{
+        text = internalText
+        inEditMode = false
+    }
+
 }
+class CommonRowState(value: String = "", editMode: Boolean = false) {
+    var internalText by mutableStateOf(value)
+    var text by mutableStateOf(value)
+    var inEditMode by mutableStateOf(editMode)
+    var errorText by mutableStateOf<String?>(null)
+}
+
 
 @Composable
 fun <T : CommonRowStateHolder>CommonRowListScreen(modifier: Modifier = Modifier,
@@ -53,10 +80,10 @@ fun <T : CommonRowStateHolder>CommonRowListScreen(modifier: Modifier = Modifier,
 fun <T : CommonRowStateHolder> CommonRowList(name: String, dataHolder: MutableList<T>, onCreateNewItem: () -> T, onClick: (T) -> Unit){
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
-    val data: MutableList<T> = remember { dataHolder }
+    val data: MutableList<T> = remember { dataHolder.also { it.forEach { it.validate() } } }
 
     val onAdd: () -> Unit = {
-        data.filter { it.commonRowState.inEditMode }.forEach { it.commonRowState.submit() }
+        data.filter { it.commonRowState.inEditMode }.forEach { it.submit() }
         val newItem = onCreateNewItem().also { it.commonRowState.inEditMode = true }
         data.add(newItem)
         coroutineScope.launch {
@@ -68,7 +95,7 @@ fun <T : CommonRowStateHolder> CommonRowList(name: String, dataHolder: MutableLi
         modifier = Modifier.simpleVerticalScrollbar(listState),
         state = listState) {
         items(data){ item ->
-            CommonRowItem(item.commonRowState,
+            CommonRowItem(item,
                 onDelete = { data.remove(item) },
                 onClick = { onClick.invoke(item) })
         }
@@ -86,17 +113,21 @@ fun <T : CommonRowStateHolder> CommonRowList(name: String, dataHolder: MutableLi
 }
 
 @Composable
-fun CommonRowItem(state: CommonRowState, onDelete: () -> Unit, onClick: () -> Unit){
+fun CommonRowItem(stateHolder: CommonRowStateHolder, onDelete: () -> Unit, onClick: () -> Unit){
+    val state = stateHolder.commonRowState
+
     if(state.inEditMode){
         EditableRowItem(
             text = state.text,
+            errorText = state.errorText,
             onTextChanged = { state.text = it },
-            onCancel = { state.cancel() },
-            onSubmit = { state.submit() }
+            onCancel = { stateHolder.cancel() },
+            onSubmit = { stateHolder.submit() },
         )
     } else {
         RowItem(
             text = state.text,
+            errorText = state.errorText,
             onEditClick = { state.inEditMode = true },
             onDelete = { onDelete.invoke() },
             onItemClick = onClick
@@ -105,52 +136,75 @@ fun CommonRowItem(state: CommonRowState, onDelete: () -> Unit, onClick: () -> Un
 }
 
 @Composable
-private fun RowItem(text: String, onEditClick: (String) -> Unit, onDelete: () -> Unit, onItemClick: () -> Unit){
-    Surface(
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-        elevation = 4.dp,
-        shape = MaterialTheme.shapes.small,
-        color = Color(0xffcfd8dc)) {
-        Row(
-            modifier = Modifier.clickable { onItemClick.invoke() },
-            verticalAlignment = Alignment.CenterVertically) {
-            Text(modifier = Modifier.weight(1f).padding(start = 8.dp).padding(vertical = 4.dp),
-                text = text,
-                style = MaterialTheme.typography.body1)
+private fun RowItem(text: String, errorText: String? = null, onEditClick: (String) -> Unit, onDelete: () -> Unit, onItemClick: () -> Unit){
+    ErrorAwareContainer(errorText) {
+        Surface(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            elevation = 4.dp,
+            shape = MaterialTheme.shapes.small,
+            color = Color(0xffcfd8dc)
+        ) {
+            Row(
+                modifier = Modifier.clickable { onItemClick.invoke() },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    modifier = Modifier.weight(1f).padding(start = 8.dp).padding(vertical = 4.dp),
+                    text = text,
+                    style = MaterialTheme.typography.body1
+                )
 
-            ItemActionIcon(Icons.Default.Edit) {
-                onEditClick.invoke(text)
-            }
+                ItemActionIcon(Icons.Default.Edit) {
+                    onEditClick.invoke(text)
+                }
 
-            ItemActionIcon(Icons.Default.Delete) {
-                onDelete.invoke()
+                ItemActionIcon(Icons.Default.Delete) {
+                    onDelete.invoke()
+                }
             }
         }
     }
 }
 
 @Composable
-private fun EditableRowItem(text: String, onTextChanged: (String) -> Unit, onSubmit: () -> Unit, onCancel: () -> Unit){
-    Surface(
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-        elevation = 4.dp,
-        shape = MaterialTheme.shapes.small,
-        color = Color(0xffeceff1),
-        border = BorderStroke(width = 3.dp, color = Color(0xffcfd8dc))
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            BasicTextField(modifier = Modifier.weight(1f).padding(start = 8.dp).padding(vertical = 4.dp),
-                value = text,
-                textStyle = MaterialTheme.typography.body1,
-                onValueChange = onTextChanged)
+private fun EditableRowItem(text: String, errorText: String? = null, onTextChanged: (String) -> Unit, onSubmit: () -> Unit, onCancel: () -> Unit){
+    val color = if(errorText == null) Color(0xffeceff1) else Color(0xffffccbc)
+    val borderColor = if(errorText == null) Color(0xffcfd8dc) else Color(0xffd84315)
 
-            ItemActionIcon(Icons.Default.Close) {
-                onCancel.invoke()
-            }
+    ErrorAwareContainer(errorText) {
+        Surface(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            elevation = 4.dp,
+            shape = MaterialTheme.shapes.small,
+            color = color,
+            border = BorderStroke(width = 3.dp, color = borderColor)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                BasicTextField(
+                    modifier = Modifier.weight(1f).padding(start = 8.dp).padding(vertical = 4.dp),
+                    value = text,
+                    textStyle = MaterialTheme.typography.body1,
+                    onValueChange = onTextChanged
+                )
 
-            ItemActionIcon(Icons.Default.Done) {
-                onSubmit.invoke()
+                ItemActionIcon(Icons.Default.Close) {
+                    onCancel.invoke()
+                }
+
+                ItemActionIcon(Icons.Default.Done) {
+                    onSubmit.invoke()
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun ErrorAwareContainer(errorText: String?, content: @Composable () -> Unit){
+    Column {
+        content()
+        errorText?.let {
+            Text(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp), text = it, style = MaterialTheme.typography.caption.copy(color = Color(0xffd84315)))
         }
     }
 }
@@ -166,21 +220,6 @@ private fun ItemActionIcon(imageVector: ImageVector, onClick: () -> Unit){
     )
 }
 
-class CommonRowState(value: String = "", editMode: Boolean = false) {
-    private var internalText by mutableStateOf(value)
-    var text by mutableStateOf(value)
-    var inEditMode by mutableStateOf(editMode)
-
-    fun submit(){
-        internalText = text
-        inEditMode = false
-    }
-
-    fun cancel(){
-        text = internalText
-        inEditMode = false
-    }
-}
 
 fun main() = application {
     Window(

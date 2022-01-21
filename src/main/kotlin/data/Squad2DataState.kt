@@ -85,6 +85,8 @@ class AnswerState(val parent: QaState, answer: Answer? = null): CommonRowStateHo
 
     override fun isValid() = text.text.isNotBlank() && context.contains(text.text)
 
+    override fun errorText() = "Answer is not part of the context."
+
     fun toAnswer() = Answer(
         answerStart = context.indexOf(text.text),
         text = text.text
