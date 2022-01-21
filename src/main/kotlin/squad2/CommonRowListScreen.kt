@@ -3,6 +3,7 @@
 package squad2
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -26,14 +28,21 @@ import simpleVerticalScrollbar
 
 interface CommonRowStateHolder {
     val commonRowState: CommonRowState
+    fun isValid(): Boolean = true
 }
 
 @Composable
-fun <T : CommonRowStateHolder>CommonRowListScreen(modifier: Modifier = Modifier, name: String, description: String? = null, dataHolder: MutableList<T>, onCreateNewItem: () -> T, onClick: (T) -> Unit){
+fun <T : CommonRowStateHolder>CommonRowListScreen(modifier: Modifier = Modifier,
+                                                  name: String,
+                                                  description: String? = null,
+                                                  dataHolder: MutableList<T>, onCreateNewItem: () -> T, onClick: (T) -> Unit){
     Column(modifier) {
         description?.let {
-            Text(text = it, style = MaterialTheme.typography.caption)
-            Spacer(Modifier.height(8.dp))
+            Text(
+                modifier = Modifier.padding(8.dp).fillMaxWidth().background(color = Color(0x88cfd8dc)).padding(16.dp),
+                text = it,
+                style = MaterialTheme.typography.body2,
+                textAlign = TextAlign.Justify)
         }
 
         CommonRowList(name, dataHolder, onCreateNewItem, onClick)
@@ -44,11 +53,12 @@ fun <T : CommonRowStateHolder>CommonRowListScreen(modifier: Modifier = Modifier,
 fun <T : CommonRowStateHolder> CommonRowList(name: String, dataHolder: MutableList<T>, onCreateNewItem: () -> T, onClick: (T) -> Unit){
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
-    val data: MutableList<T> = dataHolder
+    val data: MutableList<T> = remember { dataHolder }
 
     val onAdd: () -> Unit = {
         data.filter { it.commonRowState.inEditMode }.forEach { it.commonRowState.submit() }
-        data.add(onCreateNewItem())
+        val newItem = onCreateNewItem().also { it.commonRowState.inEditMode = true }
+        data.add(newItem)
         coroutineScope.launch {
             listState.scrollToItem(data.size - 1)
         }
@@ -80,21 +90,17 @@ fun CommonRowItem(state: CommonRowState, onDelete: () -> Unit, onClick: () -> Un
     if(state.inEditMode){
         EditableRowItem(
             text = state.text,
-            onTextChanged = {
-                state.text = it
-            },
-            onCancel = {
-                state.cancel()
-            },
-            onSubmit = {
-                state.submit()
-            })
+            onTextChanged = { state.text = it },
+            onCancel = { state.cancel() },
+            onSubmit = { state.submit() }
+        )
     } else {
-        RowItem(text = state.text, onEditClick = {
-            state.inEditMode = true
-        }, onDelete = {
-            onDelete.invoke()
-        }, onItemClick = onClick)
+        RowItem(
+            text = state.text,
+            onEditClick = { state.inEditMode = true },
+            onDelete = { onDelete.invoke() },
+            onItemClick = onClick
+        )
     }
 }
 
@@ -182,6 +188,19 @@ fun main() = application {
         state = rememberWindowState(width = 1024.dp, height = 640.dp),
         resizable = true,
         onCloseRequest = ::exitApplication) {
-        //TODO
+        CommonRowListScreen(
+            Modifier.fillMaxSize(),
+            "Test 123",
+            "VOLO was founded in 2006 in Armenia. VOLO is a software development company. ",
+        mutableListOf(TestDataHolder("hello"), TestDataHolder(("how are you"))),
+            { TestDataHolder("new test")},
+            {}
+        )
     }
+}
+
+class TestDataHolder(val name: String): CommonRowStateHolder{
+    override val commonRowState: CommonRowState
+        get() = CommonRowState(name)
+
 }

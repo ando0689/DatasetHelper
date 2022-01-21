@@ -43,12 +43,10 @@ fun SQuAD2Screen(data: Squad2Data, onClose: (AlertData?) -> Unit) {
 fun TopLevelDataScreen(state: Squad2DataState, onScreenDataChange: (CommonRowStateHolder?) -> Unit){
     val appBar: @Composable () -> Unit = {
         AppBar(
-            text = state.name.text,
+            text = state.path.text,
             onBack = { onScreenDataChange.invoke(null) },
             backIcon = Icons.Default.Close,
-            onSave = {
-                //TODO
-            }
+            onSave = { state.save() }
         )
     }
 
@@ -70,9 +68,7 @@ fun ParagraphScreen(state: DataState, onScreenDataChange: (CommonRowStateHolder?
         AppBar(
             text = "Paragraphs",
             onBack = { onScreenDataChange.invoke(state.parent) },
-            onSave = {
-                //TODO
-            }
+            onSave = { state.save() }
         )
     }
 
@@ -93,11 +89,9 @@ fun ParagraphScreen(state: DataState, onScreenDataChange: (CommonRowStateHolder?
 fun QuestionsScreen(state: ParagraphState, onScreenDataChange: (CommonRowStateHolder?) -> Unit){
     val appBar: @Composable () -> Unit = {
         AppBar(
-            text = "Qurstions",
+            text = "Questions",
             onBack = { onScreenDataChange.invoke(state.parent) },
-            onSave = {
-                //TODO
-            }
+            onSave = { state.save() }
         )
     }
 
