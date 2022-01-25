@@ -2,6 +2,7 @@
 
 package squad2
 
+import AppTheme
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -19,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -27,6 +29,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import kotlinx.coroutines.launch
+import myColors
 import simpleVerticalScrollbar
 
 interface CommonRowStateHolder {
@@ -95,7 +98,7 @@ fun CommonRowListHeader(modifier: Modifier = Modifier, text: String){
 fun <T : CommonRowStateHolder> CommonRowListScreen(modifier: Modifier = Modifier, header: (@Composable () -> Unit)? = null, name: String, description: String? = null, dataHolder: MutableList<T>, onCreateNewItem: () -> T, onClick: (T) -> Unit){
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
-    val data: MutableList<T> = remember { dataHolder.also { it.forEach { it.validate() } } }
+    val data: MutableList<T> = remember { dataHolder.onEach { it.validate() } }
 
     val onAdd: () -> Unit = {
         data.filter { it.commonRowState.inEditMode }.forEach { it.submit() }
@@ -122,14 +125,6 @@ fun <T : CommonRowStateHolder> CommonRowListScreen(modifier: Modifier = Modifier
                     modifier = Modifier.padding(8.dp),
                     text = it)
             }
-
-//            item {
-//                Text(
-//                    modifier = Modifier.padding(8.dp).fillMaxWidth().background(color = MaterialTheme.colors.secondary).padding(16.dp),
-//                    text = it,
-//                    style = MaterialTheme.typography.body2,
-//                    textAlign = TextAlign.Justify)
-//            }
         }
 
         items(data){ item ->
@@ -175,7 +170,6 @@ fun CommonRowItem(modifier: Modifier = Modifier, stateHolder: CommonRowStateHold
             )
         }
     }
-
 }
 
 @Composable
@@ -226,7 +220,7 @@ private fun RowItem(text: String, errorText: String? = null, noteText: String? =
 
 @Composable
 private fun EditableRowItem(text: String, errorText: String? = null, onTextChanged: (String) -> Unit, onSubmit: () -> Unit, onCancel: () -> Unit){
-    val color = if(errorText == null) MaterialTheme.colors.secondary else Color(0xfffbe9e7)
+    val color = if(errorText == null) MaterialTheme.colors.secondary else MaterialTheme.myColors.errorBackground
     val borderColor = if(errorText == null) MaterialTheme.colors.primary else MaterialTheme.colors.error
 
     ErrorAwareContainer(errorText) {
@@ -234,6 +228,7 @@ private fun EditableRowItem(text: String, errorText: String? = null, onTextChang
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             shape = MaterialTheme.shapes.small,
             color = color,
+            contentColor = MaterialTheme.myColors.onSurface,
             border = BorderStroke(width = 3.dp, color = borderColor),
             elevation = 4.dp,
         ) {
@@ -241,7 +236,8 @@ private fun EditableRowItem(text: String, errorText: String? = null, onTextChang
                 BasicTextField(
                     modifier = Modifier.weight(1f).padding(start = 8.dp).padding(vertical = 4.dp),
                     value = text,
-                    textStyle = MaterialTheme.typography.body1,
+                    textStyle = MaterialTheme.typography.body1.copy(color = MaterialTheme.colors.onSecondary),
+                    cursorBrush = SolidColor(MaterialTheme.colors.onSecondary),
                     onValueChange = onTextChanged
                 )
 
@@ -285,14 +281,19 @@ fun main() = application {
         state = rememberWindowState(width = 1024.dp, height = 640.dp),
         resizable = true,
         onCloseRequest = ::exitApplication) {
-        CommonRowListScreen(
-            modifier = Modifier.fillMaxSize(),
-            name = "Test 123",
-            description = "VOLO was founded in 2006 in Armenia. VOLO is a software development company. ",
-            dataHolder = mutableListOf(TestDataHolder("hello"), TestDataHolder(("how are you"))),
-            onCreateNewItem = { TestDataHolder("new test")},
-            onClick = {}
-        )
+        AppTheme {
+            Surface {
+                CommonRowListScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    name = "Test 123",
+                    description = "VOLO was founded in 2006 in Armenia. VOLO is a software development company. ",
+                    dataHolder = mutableListOf(TestDataHolder("hello"), TestDataHolder(("how are you"))),
+                    onCreateNewItem = { TestDataHolder("new test")},
+                    onClick = {}
+                )
+            }
+        }
+
     }
 }
 
