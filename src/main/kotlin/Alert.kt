@@ -26,7 +26,7 @@ sealed class AlertData {
 }
 
 @Composable
-fun Alert(data: AlertData?, onDismiss: () -> Unit){
+fun Alert(data: AlertData, onDismiss: () -> Unit){
     when(data) {
         is AlertData.TextAlertData -> TextAlert(data, onDismiss)
         is AlertData.TextFieldAlertData -> TextFieldAlert(data, onDismiss)

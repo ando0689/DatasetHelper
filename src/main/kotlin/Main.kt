@@ -1,4 +1,6 @@
 // Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+import androidx.compose.animation.*
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.material.MaterialTheme
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.material.Surface
@@ -26,13 +28,14 @@ fun rememberScreen(initialScreen: Screen = Screen.Main()): MutableState<Screen>{
     return rememberSaveable { mutableStateOf(initialScreen) }
 }
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 @Preview
 fun App(composeWindow: ComposeWindow) {
     var currentScreen by rememberScreen()
 
     AppTheme {
-        Surface {
+        AlertAware(currentScreen.alert, onDismiss = { currentScreen = it }){
             when(val screen = currentScreen){
                 is Screen.Main -> MainScreen(composeWindow, screen){
                     currentScreen = it
@@ -41,16 +44,32 @@ fun App(composeWindow: ComposeWindow) {
                     currentScreen = Screen.Main(alertData = it)
                 })
             }
-
-            currentScreen.alert?.let {
-                Alert(it){
-                    currentScreen = it.parent
-                }
-            }
         }
     }
 }
 
+
+@Composable
+fun AlertAware(alert: AlertData?, onDismiss: (Screen) -> Unit, content: @Composable () -> Unit){
+    var visible by remember { mutableStateOf(false) }
+    var previous by remember { mutableStateOf<AlertData?>(null) }
+
+    visible = alert != null
+    Surface {
+        content.invoke()
+
+        AnimatedVisibility(visible, enter = fadeIn(), exit = fadeOut()){
+            val data = if(visible) alert else previous
+            data?.let {
+                println("current")
+                Alert(it){
+                    onDismiss.invoke(it.parent)
+                }
+                previous = it
+            }
+        }
+    }
+}
 
 fun main() = application {
     Window(
@@ -61,8 +80,3 @@ fun main() = application {
         App(this.window)
     }
 }
-
-
-//val file = File("${System.getProperty("user.home")}/Desktop", "testfile.txt")
-//file.writeText("hello file")
-//println(file)
