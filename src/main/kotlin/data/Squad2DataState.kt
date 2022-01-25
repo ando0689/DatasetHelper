@@ -57,8 +57,8 @@ class ParagraphState(val parent: DataState, paragraph: Paragraph? = null): Commo
 }
 
 class QaState(val parent: ParagraphState, qa: Qa? = null): CommonRowStateHolder {
-    var question = CommonRowState(value = qa?.question ?: "")
     val answers = mutableStateListOf(*qa?.answers?.map { AnswerState(this, it) }?.toTypedArray() ?: emptyArray())
+    var question = CommonRowState(value = qa?.question ?: "", note = if(answers.isEmpty()) "No Answer" else null)
     val id = if(qa?.id.isNullOrBlank()) UUID.randomUUID().toString() else qa?.id!!
     val context: String
         get() = parent.context.text

@@ -56,7 +56,7 @@ fun main() = application {
     Window(
         title = "SQuAD2",
         state = rememberWindowState(width = 1024.dp, height = 640.dp),
-        resizable = false,
+        resizable = true,
         onCloseRequest = ::exitApplication) {
         App(this.window)
     }

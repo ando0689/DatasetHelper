@@ -18,7 +18,7 @@ val appColors = lightColors(
     onBackground = tealExtraDark,
     onSurface = tealExtraDark,
     secondary = tealExtraLight,
-    secondaryVariant = teal,
+    secondaryVariant = tealVividLight,
     onSecondary = tealExtraDark,
     error = red
 )
