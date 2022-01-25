@@ -71,7 +71,7 @@ fun CommonRowListHeader(modifier: Modifier = Modifier, text: String){
     var textOverflow by remember { mutableStateOf(false) }
 
     Column(
-        modifier = modifier.background(color = MaterialTheme.colors.secondary.copy(alpha = 0.7f)).clickable { headerCollapsed = !headerCollapsed }.padding(8.dp).animateContentSize(),
+        modifier = modifier.background(color = MaterialTheme.colors.secondary.copy(alpha = 0.7f)).padding(8.dp).animateContentSize(),
         horizontalAlignment = Alignment.End) {
         SelectionContainer {
             Text(
@@ -87,7 +87,7 @@ fun CommonRowListHeader(modifier: Modifier = Modifier, text: String){
         }
 
         if(textOverflow || !headerCollapsed){
-            Icon(
+            Icon(modifier = Modifier.clickable { headerCollapsed = !headerCollapsed },
                 imageVector = if(headerCollapsed) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
                 contentDescription = if(headerCollapsed) "Expand" else "Collapse")
         }

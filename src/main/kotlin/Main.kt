@@ -34,7 +34,7 @@ fun rememberScreen(initialScreen: Screen = Screen.Main()): MutableState<Screen>{
 fun App(composeWindow: ComposeWindow) {
     var currentScreen by rememberScreen()
 
-    AppTheme {
+    AppTheme(darkTheme = false) {
         AlertAware(currentScreen.alert, onDismiss = { currentScreen = it }){
             when(val screen = currentScreen){
                 is Screen.Main -> MainScreen(composeWindow, screen){
