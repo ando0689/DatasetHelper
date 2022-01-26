@@ -1,5 +1,10 @@
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -11,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import data.*
 import squad2.CommonRowListHeader
 import squad2.CommonRowListScreen
@@ -20,6 +26,11 @@ import squad2.CommonRowStateHolder
 fun SQuAD2Screen(data: Squad2Data, onClose: (AlertData?) -> Unit) {
     var currentScreenData: CommonRowStateHolder? by remember { mutableStateOf(Squad2DataState(data)) }
 
+    val topLevelDataScreenListState = rememberLazyListState()
+    val paragraphScreenListState = rememberLazyListState()
+    val questionsScreenListState = rememberLazyListState()
+    val answersScreenListState = rememberLazyListState()
+
     val appBar: @Composable () -> Unit = { ScreenAppBar(currentScreenData) { parent ->
         currentScreenData = parent
     } }
@@ -27,16 +38,16 @@ fun SQuAD2Screen(data: Squad2Data, onClose: (AlertData?) -> Unit) {
     Scaffold(topBar = appBar) {
         Crossfade(targetState = currentScreenData){ state ->
             when(state){
-                is Squad2DataState -> TopLevelDataScreen(state){
+                is Squad2DataState -> TopLevelDataScreen(state, topLevelDataScreenListState){
                     currentScreenData = it
                 }
-                is DataState -> ParagraphScreen(state) {
+                is DataState -> ParagraphScreen(state, paragraphScreenListState) {
                     currentScreenData = it
                 }
-                is ParagraphState -> QuestionsScreen(state) {
+                is ParagraphState -> QuestionsScreen(state, questionsScreenListState) {
                     currentScreenData = it
                 }
-                is QaState -> AnsweresScreen(state) {
+                is QaState -> AnswersScreen(state, answersScreenListState) {
                     currentScreenData = it
                 }
                 else -> onClose.invoke(null)
@@ -76,11 +87,14 @@ fun ScreenAppBar(state: CommonRowStateHolder?, onScreenDataChange: (CommonRowSta
 }
 
 @Composable
-fun TopLevelDataScreen(state: Squad2DataState, onScreenDataChange: (CommonRowStateHolder?) -> Unit){
+fun TopLevelDataScreen(state: Squad2DataState, listState: LazyListState, onScreenDataChange: (CommonRowStateHolder?) -> Unit){
     CommonRowListScreen(
         modifier = Modifier.fillMaxSize(),
+        listState = listState,
+        header = {
+            CommonRowListHeader(modifier = Modifier.padding(bottom = 8.dp), text = state.getSummery())
+        },
         name = "SQuAD2 Dataset",
-        description = "Add SQuAD v2.0 datasets. All of them will be saved in a single file. Usually we will need only one dataset per file",
         dataHolder = state.data,
         onCreateNewItem = { DataState(state) }){
         onScreenDataChange.invoke(it)
@@ -88,11 +102,14 @@ fun TopLevelDataScreen(state: Squad2DataState, onScreenDataChange: (CommonRowSta
 }
 
 @Composable
-fun ParagraphScreen(state: DataState, onScreenDataChange: (CommonRowStateHolder?) -> Unit){
+fun ParagraphScreen(state: DataState, listState: LazyListState, onScreenDataChange: (CommonRowStateHolder?) -> Unit){
     CommonRowListScreen(
         modifier = Modifier.fillMaxSize(),
+        listState = listState,
+        header = {
+            CommonRowListHeader(modifier = Modifier.padding(bottom = 8.dp), text = state.getSummery())
+        },
         name = "Paragraph",
-        description = "Add Paragraphs to your Dataset. Each Paragraph will have its own set of Question/Answers ",
         dataHolder = state.paragraphs,
         onCreateNewItem = { ParagraphState(state) }){
         onScreenDataChange.invoke(it)
@@ -100,9 +117,13 @@ fun ParagraphScreen(state: DataState, onScreenDataChange: (CommonRowStateHolder?
 }
 
 @Composable
-fun QuestionsScreen(state: ParagraphState, onScreenDataChange: (CommonRowStateHolder?) -> Unit){
+fun QuestionsScreen(state: ParagraphState, listState: LazyListState, onScreenDataChange: (CommonRowStateHolder?) -> Unit){
     CommonRowListScreen(
         modifier = Modifier.fillMaxSize(),
+        listState = listState,
+        header = {
+            CommonRowListHeader(modifier = Modifier.padding(bottom = 8.dp), text = state.getSummery())
+        },
         name = "Question",
         description = state.context.text,
         dataHolder = state.qas,
@@ -112,9 +133,10 @@ fun QuestionsScreen(state: ParagraphState, onScreenDataChange: (CommonRowStateHo
 }
 
 @Composable
-fun AnsweresScreen(state: QaState, onScreenDataChange: (CommonRowStateHolder?) -> Unit){
+fun AnswersScreen(state: QaState, listState: LazyListState, onScreenDataChange: (CommonRowStateHolder?) -> Unit){
     CommonRowListScreen(
         modifier = Modifier.fillMaxSize(),
+        listState = listState,
         header = {
             CommonRowListHeader(text = state.context)
         },

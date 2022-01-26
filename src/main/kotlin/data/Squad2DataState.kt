@@ -9,10 +9,26 @@ class Squad2DataState(squad2Data: Squad2Data? = null): CommonRowStateHolder {
     val path = CommonRowState(value = squad2Data?.path ?: "")
     val data = mutableStateListOf(*squad2Data?.data?.map { DataState(this, it) }?.toTypedArray() ?: emptyArray())
 
+    val datasetsSize: Int
+        get() = data.size
+
+    val paragraphsSize: Int
+        get() = data.sumOf { it.paragraphsSize }
+
+    val questionsSize: Int
+        get() = data.sumOf { it.questionsSize }
+
+    val answerableQuestionsSize: Int
+        get() = data.sumOf { it.answerableQuestionsSize }
+
     fun toSquad2Data() = Squad2Data(
         path = path.text,
         data = data.map { it.toData() }
     )
+
+    fun getSummery(): String {
+        return "Datasets: $datasetsSize, Paragraphs: $paragraphsSize, Questions: $questionsSize, Answerable: $answerableQuestionsSize"
+    }
 
     fun save(){
         toSquad2Data().save()
@@ -26,10 +42,23 @@ class DataState(val parent: Squad2DataState, data: Data? = null): CommonRowState
     val title = CommonRowState(value = data?.title ?: "")
     val paragraphs = mutableStateListOf(*data?.paragraphs?.map { ParagraphState(this, it) }?.toTypedArray() ?: emptyArray())
 
+    val paragraphsSize: Int
+        get() = paragraphs.size
+
+    val questionsSize: Int
+        get() = paragraphs.sumOf { it.questionsSize }
+
+    val answerableQuestionsSize: Int
+        get() = paragraphs.sumOf { it.answerableQuestionsSize }
+
     fun toData() = Data(
         title = title.text,
         paragraphs = paragraphs.map { it.toParagraph() }
     )
+
+    fun getSummery(): String {
+        return "Paragraphs: $paragraphsSize, Questions: $questionsSize, Answerable: $answerableQuestionsSize"
+    }
 
     fun save(){
         parent.save()
@@ -43,6 +72,12 @@ class ParagraphState(val parent: DataState, paragraph: Paragraph? = null): Commo
     val context = CommonRowState(value = paragraph?.context ?: "")
     val qas = mutableStateListOf(*paragraph?.qas?.map { QaState(this, it) }?.toTypedArray() ?: emptyArray())
 
+    val questionsSize: Int
+        get() = qas.size
+
+    val answerableQuestionsSize: Int
+        get() = qas.filter { it.answers.isNotEmpty() }.size
+
     fun toParagraph() = Paragraph(
         context = context.text,
         qas = qas.map { it.toQa() }
@@ -50,6 +85,10 @@ class ParagraphState(val parent: DataState, paragraph: Paragraph? = null): Commo
 
     fun save(){
         parent.save()
+    }
+
+    fun getSummery(): String {
+        return "Questions: $questionsSize, Answerable: $answerableQuestionsSize"
     }
 
     override val commonRowState: CommonRowState
@@ -84,7 +123,7 @@ class QaState(val parent: ParagraphState, qa: Qa? = null): CommonRowStateHolder 
         get() = question
 }
 
-class AnswerState(val parent: QaState, answer: Answer? = null): CommonRowStateHolder{
+class AnswerState(private val parent: QaState, answer: Answer? = null): CommonRowStateHolder{
     val text = CommonRowState(value = answer?.text ?: "")
     val context: String
         get() = parent.context
