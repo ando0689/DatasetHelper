@@ -1,12 +1,9 @@
 // Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 import androidx.compose.animation.*
-import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.material.MaterialTheme
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.material.Surface
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.unit.dp
 
@@ -61,7 +58,6 @@ fun AlertAware(alert: AlertData?, onDismiss: (Screen) -> Unit, content: @Composa
         AnimatedVisibility(visible, enter = fadeIn(), exit = fadeOut()){
             val data = if(visible) alert else previous
             data?.let {
-                println("current")
                 Alert(it){
                     onDismiss.invoke(it.parent)
                 }

@@ -20,8 +20,8 @@ import squad2.CommonRowStateHolder
 fun SQuAD2Screen(data: Squad2Data, onClose: (AlertData?) -> Unit) {
     var currentScreenData: CommonRowStateHolder? by remember { mutableStateOf(Squad2DataState(data)) }
 
-    val appBar: @Composable () -> Unit = { ScreenAppBar(currentScreenData) {
-        currentScreenData = it
+    val appBar: @Composable () -> Unit = { ScreenAppBar(currentScreenData) { parent ->
+        currentScreenData = parent
     } }
 
     Scaffold(topBar = appBar) {
@@ -66,7 +66,10 @@ fun ScreenAppBar(state: CommonRowStateHolder?, onScreenDataChange: (CommonRowSta
         )
         is QaState -> AppBar(
             text = "Answers",
-            onBack = { onScreenDataChange.invoke(state.parent) },
+            onBack = {
+                state.setNoteIfNoAnswers()
+                onScreenDataChange.invoke(state.parent)
+            },
             onSave = { state.save() }
         )
     }
