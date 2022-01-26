@@ -1,11 +1,13 @@
 package data
 
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import squad2.CommonRowState
 import squad2.CommonRowStateHolder
-import java.util.*
 
-class Squad2DataState(squad2Data: Squad2Data? = null): CommonRowStateHolder {
+class Squad2DataState(squad2Data: Squad2Data? = null, val groupQuestions: Boolean = true): CommonRowStateHolder {
     val path = CommonRowState(value = squad2Data?.path ?: "")
     val data = mutableStateListOf(*squad2Data?.data?.map { DataState(this, it) }?.toTypedArray() ?: emptyArray())
 
@@ -40,7 +42,9 @@ class Squad2DataState(squad2Data: Squad2Data? = null): CommonRowStateHolder {
 
 class DataState(val parent: Squad2DataState, data: Data? = null): CommonRowStateHolder {
     val title = CommonRowState(value = data?.title ?: "")
-    val paragraphs = mutableStateListOf(*data?.paragraphs?.map { ParagraphState(this, it) }?.toTypedArray() ?: emptyArray())
+    val paragraphs = mutableStateListOf(*data?.paragraphs?.map {
+        if(parent.groupQuestions) GroupParagraphState(this, it) else PlainParagraphState(this, it)
+    }?.toTypedArray() ?: emptyArray())
 
     val paragraphsSize: Int
         get() = paragraphs.size
@@ -68,9 +72,14 @@ class DataState(val parent: Squad2DataState, data: Data? = null): CommonRowState
         get() = title
 }
 
-class ParagraphState(val parent: DataState, paragraph: Paragraph? = null): CommonRowStateHolder {
-    val context = CommonRowState(value = paragraph?.context ?: "")
-    val qas = mutableStateListOf(*paragraph?.qas?.map { QaState(this, it) }?.toTypedArray() ?: emptyArray())
+abstract class ParagraphState(val parent: DataState, paragraph: Paragraph?): CommonRowStateHolder {
+    abstract val qas: List<Qa>
+
+    companion object {
+        fun new(parent: DataState, paragraph: Paragraph? = null): ParagraphState {
+            return if(parent.parent.groupQuestions) GroupParagraphState(parent, paragraph) else PlainParagraphState(parent, paragraph)
+        }
+    }
 
     val questionsSize: Int
         get() = qas.size
@@ -80,8 +89,10 @@ class ParagraphState(val parent: DataState, paragraph: Paragraph? = null): Commo
 
     fun toParagraph() = Paragraph(
         context = context.text,
-        qas = qas.map { it.toQa() }
+        qas = qas
     )
+
+    val context = CommonRowState(value = paragraph?.context ?: "")
 
     fun save(){
         parent.save()
@@ -95,52 +106,18 @@ class ParagraphState(val parent: DataState, paragraph: Paragraph? = null): Commo
         get() = context
 }
 
-class QaState(val parent: ParagraphState, qa: Qa? = null): CommonRowStateHolder {
-    val answers = mutableStateListOf(*qa?.answers?.map { AnswerState(this, it) }?.toTypedArray() ?: emptyArray())
-    var question = CommonRowState(value = qa?.question ?: "").also { setNoteIfNoAnswers(it) }
-    val id = if(qa?.id.isNullOrBlank()) UUID.randomUUID().toString() else qa?.id!!
+
+interface AnswerState: CommonRowStateHolder {
+    val text: CommonRowState
     val context: String
-        get() = parent.context.text
-
-    fun toQa() = Qa(
-        answers = answers.map { it.toAnswer() },
-        id = id,
-        isImpossible = answers.isEmpty(),
-        question = question.text
-    )
-
-    fun setNoteIfNoAnswers() = setNoteIfNoAnswers(question)
-
-    private fun setNoteIfNoAnswers(q: CommonRowState){
-        q.noteText = if(answers.isEmpty()) "No Answer" else null
-    }
-
-    fun save(){
-        parent.save()
-    }
-
-    override val commonRowState: CommonRowState
-        get() = question
-}
-
-class AnswerState(private val parent: QaState, answer: Answer? = null): CommonRowStateHolder{
-    val text = CommonRowState(value = answer?.text ?: "")
-    val context: String
-        get() = parent.context
-
-    override fun isValid() = text.text.isNotBlank() && context.contains(text.text)
 
     override fun errorText() = "Answer is not part of the context."
+
+    override val commonRowState: CommonRowState
+        get() = text
 
     fun toAnswer() = Answer(
         answerStart = context.indexOf(text.text),
         text = text.text
     )
-
-    fun save(){
-        parent.save()
-    }
-
-    override val commonRowState: CommonRowState
-        get() = text
 }

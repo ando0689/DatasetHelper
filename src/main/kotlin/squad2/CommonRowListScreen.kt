@@ -147,7 +147,7 @@ fun <T : CommonRowStateHolder> CommonRowListScreen(modifier: Modifier = Modifier
 }
 
 @Composable
-fun CommonRowItem(modifier: Modifier = Modifier, stateHolder: CommonRowStateHolder, onDelete: () -> Unit, onClick: () -> Unit){
+fun CommonRowItem(modifier: Modifier = Modifier, stateHolder: CommonRowStateHolder, deleteAllowed: Boolean = true, onDelete: () -> Unit = {}, onClick: () -> Unit = {}){
     val state = stateHolder.commonRowState
 
     Surface(modifier = modifier.animateContentSize()) {
@@ -164,6 +164,7 @@ fun CommonRowItem(modifier: Modifier = Modifier, stateHolder: CommonRowStateHold
                 text = state.text,
                 errorText = state.errorText,
                 noteText = state.noteText,
+                deleteAllowed = deleteAllowed,
                 onEditClick = { state.inEditMode = true },
                 onDelete = { onDelete.invoke() },
                 onItemClick = onClick
@@ -173,7 +174,7 @@ fun CommonRowItem(modifier: Modifier = Modifier, stateHolder: CommonRowStateHold
 }
 
 @Composable
-private fun RowItem(text: String, errorText: String? = null, noteText: String? = null, onEditClick: (String) -> Unit, onDelete: () -> Unit, onItemClick: () -> Unit){
+private fun RowItem(text: String, errorText: String? = null, noteText: String? = null, deleteAllowed: Boolean, onEditClick: (String) -> Unit, onDelete: () -> Unit, onItemClick: () -> Unit){
     ErrorAwareContainer(errorText) {
         Surface(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -210,8 +211,10 @@ private fun RowItem(text: String, errorText: String? = null, noteText: String? =
                     onEditClick.invoke(text)
                 }
 
-                ItemActionIcon(Icons.Default.Delete) {
-                    onDelete.invoke()
+                if(deleteAllowed) {
+                    ItemActionIcon(Icons.Default.Delete) {
+                        onDelete.invoke()
+                    }
                 }
             }
         }
