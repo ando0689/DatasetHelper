@@ -1,15 +1,17 @@
 package data
 
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import squad2.CommonRowState
 import squad2.CommonRowStateHolder
+import java.io.File
 
 class Squad2DataState(squad2Data: Squad2Data? = null, val groupQuestions: Boolean = true): CommonRowStateHolder {
     val path = CommonRowState(value = squad2Data?.path ?: "")
     val data = mutableStateListOf(*squad2Data?.data?.map { DataState(this, it) }?.toTypedArray() ?: emptyArray())
+
+    val fileName: String
+        get() = File(path.text).name
+
 
     val datasetsSize: Int
         get() = data.size

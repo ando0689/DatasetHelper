@@ -152,18 +152,17 @@ fun GroupedQuestionsScreen(state: GroupQaState, listState: LazyListState, onScre
 fun ScreenAppBar(state: CommonRowStateHolder?, onScreenDataChange: (CommonRowStateHolder?) -> Unit){
     when(state){
         is Squad2DataState -> AppBar(
-            text = state.path.text,
+            text = state.fileName,
             additionalContent = {
-                TextButton(onClick = {
-                    state.save()
-                    val data = state.toSquad2Data()
-                    val newState = Squad2DataState(data, !state.groupQuestions)
-                    onScreenDataChange.invoke(newState)
-                }){
-                    Text(
-                        color = MaterialTheme.myColors.onPrimary,
-                        text = if(state.groupQuestions) "Ungroup Questions" else "Group Questions")
-                }
+                Text(text = "Group Questions")
+                Switch(
+
+                    checked = state.groupQuestions, onCheckedChange = {
+                        state.save()
+                        val data = state.toSquad2Data()
+                        val newState = Squad2DataState(data, !state.groupQuestions)
+                        onScreenDataChange.invoke(newState)
+                    })
             },
             onBack = { onScreenDataChange.invoke(null) },
             backIcon = Icons.Default.Close,
@@ -218,10 +217,10 @@ fun AppBar(modifier: Modifier = Modifier, text: String,
             Icon(backIcon, "Back")
         })
 
-        Text(modifier = Modifier.weight(1f),
+        Text(modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
             text = text,
             style = MaterialTheme.typography.h5,
-            textAlign = TextAlign.Center)
+            textAlign = TextAlign.Start)
 
         additionalContent?.invoke()
 

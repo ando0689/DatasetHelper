@@ -41,6 +41,7 @@ val appDarkColors = darkColors(
     primary = tealPail,
     secondary = gray,
     onSecondary = Color.White,
+    onSurface = Color.White,
     primaryVariant = Color.Black,
     secondaryVariant = Color.Black
 )
