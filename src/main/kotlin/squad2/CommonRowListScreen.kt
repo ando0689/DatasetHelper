@@ -57,10 +57,11 @@ interface CommonRowStateHolder {
     }
 
 }
-class CommonRowState(value: String = "", note: String? = null, editMode: Boolean = false) {
+class CommonRowState(value: String = "", note: String? = null, editMode: Boolean = false, editable: Boolean = true) {
     var internalText by mutableStateOf(value)
     var text by mutableStateOf(value)
     var inEditMode by mutableStateOf(editMode)
+    var isEditable by mutableStateOf(editable)
     var errorText by mutableStateOf<String?>(null)
     var noteText by mutableStateOf(note)
 }
@@ -165,6 +166,7 @@ fun CommonRowItem(modifier: Modifier = Modifier, stateHolder: CommonRowStateHold
                 errorText = state.errorText,
                 noteText = state.noteText,
                 deleteAllowed = deleteAllowed,
+                editAllowed = state.isEditable,
                 onEditClick = { state.inEditMode = true },
                 onDelete = { onDelete.invoke() },
                 onItemClick = onClick
@@ -174,7 +176,7 @@ fun CommonRowItem(modifier: Modifier = Modifier, stateHolder: CommonRowStateHold
 }
 
 @Composable
-private fun RowItem(text: String, errorText: String? = null, noteText: String? = null, deleteAllowed: Boolean, onEditClick: (String) -> Unit, onDelete: () -> Unit, onItemClick: () -> Unit){
+private fun RowItem(text: String, errorText: String? = null, noteText: String? = null, deleteAllowed: Boolean, editAllowed: Boolean, onEditClick: (String) -> Unit, onDelete: () -> Unit, onItemClick: () -> Unit){
     ErrorAwareContainer(errorText) {
         Surface(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -207,8 +209,10 @@ private fun RowItem(text: String, errorText: String? = null, noteText: String? =
                     }
                 }
 
-                ItemActionIcon(Icons.Default.Edit) {
-                    onEditClick.invoke(text)
+                if(editAllowed) {
+                    ItemActionIcon(Icons.Default.Edit) {
+                        onEditClick.invoke(text)
+                    }
                 }
 
                 if(deleteAllowed) {

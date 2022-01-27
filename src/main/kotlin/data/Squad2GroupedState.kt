@@ -19,11 +19,7 @@ class GroupParagraphState(parent: DataState, paragraph: Paragraph? = null): Para
 class GroupQaState(val parent: GroupParagraphState, qas: List<Qa>? = null, answer: Answer? = null): CommonRowStateHolder {
     var note by mutableStateOf<String?>(null)
     val answer = GroupedAnswerState(this, answer)
-    val questions = mutableStateListOf(*qas?.map { GroupQuestionItemState(this, it) }?.toTypedArray() ?: arrayOf(GroupQuestionItemState(this)))
-
-    init {
-        setNote()
-    }
+    val questions = mutableStateListOf(*qas?.map { GroupQuestionItemState(this, it) }?.toTypedArray() ?: arrayOf())
 
     val context: String
         get() = parent.context.text
@@ -36,12 +32,8 @@ class GroupQaState(val parent: GroupParagraphState, qas: List<Qa>? = null, answe
         parent.save()
     }
 
-    fun setNote(){
-        note = if(answer.text.text.isBlank()) " ${questions.size}  with No Answer" else " ${questions.size} "
-    }
-
     override val commonRowState: CommonRowState
-        get() = CommonRowState(value = questions.first().commonRowState.text, note = note)
+        get() = questions.first().commonRowState
 }
 
 class GroupQuestionItemState(val parent: GroupQaState, qa: Qa? = null): CommonRowStateHolder {

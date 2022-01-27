@@ -194,7 +194,6 @@ fun ScreenAppBar(state: CommonRowStateHolder?, onScreenDataChange: (CommonRowSta
         is GroupQaState -> AppBar(
             text = "Questions Group",
             onBack = {
-                state.setNote()
                 onScreenDataChange.invoke(state.parent)
             },
             onSave = { state.save() }
