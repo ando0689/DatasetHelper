@@ -100,6 +100,8 @@ abstract class ParagraphState(val parent: DataState, paragraph: Paragraph?): Com
         parent.save()
     }
 
+    override fun errorText() = "Some answers do not match this context"
+
     fun getSummery(): String {
         return "Questions: $questionsSize, Answerable: $answerableQuestionsSize"
     }

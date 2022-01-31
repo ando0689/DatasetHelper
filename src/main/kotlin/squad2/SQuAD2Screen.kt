@@ -138,6 +138,7 @@ fun GroupedQuestionsScreen(state: GroupQaState, listState: LazyListState, onScre
             Column {
                 CommonRowListHeader(modifier = Modifier.padding(bottom = 8.dp), text = state.context)
                 Text(modifier = Modifier.padding(start = 16.dp, top = 8.dp), text = "Answer", style = MaterialTheme.typography.h6, color = MaterialTheme.myColors.primaryVariant)
+                state.answer.validate()
                 CommonRowItem(stateHolder = state.answer, deleteAllowed = false)
                 Text(modifier = Modifier.padding(start = 16.dp, top = 8.dp), text = "Questions", style = MaterialTheme.typography.h6, color = MaterialTheme.myColors.primaryVariant)
             }
@@ -194,6 +195,7 @@ fun ScreenAppBar(state: CommonRowStateHolder?, onScreenDataChange: (CommonRowSta
         is GroupQaState -> AppBar(
             text = "Questions Group",
             onBack = {
+                state.setNote()
                 onScreenDataChange.invoke(state.parent)
             },
             onSave = { state.save() }

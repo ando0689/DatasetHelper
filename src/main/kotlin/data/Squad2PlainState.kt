@@ -10,6 +10,10 @@ class PlainParagraphState(parent: DataState, paragraph: Paragraph? = null): Para
 
     override val qas: List<Qa>
         get() = questions.map { it.toQa() }
+
+    override fun isValid(): Boolean {
+        return questions.all { it.isValid() }
+    }
 }
 
 
@@ -36,6 +40,12 @@ class PlainQaState(val parent: PlainParagraphState, qa: Qa? = null): CommonRowSt
     fun save(){
         parent.save()
     }
+
+    override fun isValid(): Boolean {
+        return answers.all { it.isValid() }
+    }
+
+    override fun errorText() = "Some answer of this question does not match the context"
 
     override val commonRowState: CommonRowState
         get() = question

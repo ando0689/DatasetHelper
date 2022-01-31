@@ -39,10 +39,9 @@ interface CommonRowStateHolder {
     fun errorText(): String = "Incorrect Value"
 
     fun submit() = commonRowState.apply {
-        if(validate()) {
-            internalText = text
-            inEditMode = false
-        }
+        validate()
+        internalText = text
+        inEditMode = false
     }
 
     fun validate(): Boolean = commonRowState.run {
@@ -177,12 +176,14 @@ fun CommonRowItem(modifier: Modifier = Modifier, stateHolder: CommonRowStateHold
 
 @Composable
 private fun RowItem(text: String, errorText: String? = null, noteText: String? = null, deleteAllowed: Boolean, editAllowed: Boolean, onEditClick: (String) -> Unit, onDelete: () -> Unit, onItemClick: () -> Unit){
+    val color = if(errorText == null) MaterialTheme.colors.secondary else MaterialTheme.myColors.errorBackground
+
     ErrorAwareContainer(errorText) {
         Surface(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             elevation = 4.dp,
             shape = MaterialTheme.shapes.small,
-            color = MaterialTheme.colors.secondary
+            color = color
         ) {
             Row(
                 modifier = Modifier.clickable { onItemClick.invoke() },
