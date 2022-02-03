@@ -12,6 +12,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
 import org.jetbrains.skia.impl.Log
 
 @Composable
@@ -47,5 +50,16 @@ fun Modifier.simpleVerticalScrollbar(
                 alpha = alpha
             )
         }
+    }
+}
+
+
+fun main() = application {
+    Window(
+        title = "SQuAD2",
+        state = rememberWindowState(width = 1024.dp, height = 640.dp),
+        resizable = true,
+        onCloseRequest = ::exitApplication) {
+        App(this.window)
     }
 }

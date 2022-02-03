@@ -35,10 +35,22 @@ data class Squad2Data(
         }
     }
 
+    fun toQuestionsTsv(): String {
+        val questions = data
+            .flatMap { it.paragraphs }
+            .flatMapIndexed { i, p ->
+                p.qas.filter { !it.isImpossible }.map { "${it.question}\t$i" }
+        }
+
+        return "sentence\tlabel\n" + questions.shuffled().joinToString("\n")
+    }
+
     fun save(){
         val jsonString = Json.encodeToString(serializer(), this)
-        val file = File(path)
-        file.writeText(jsonString)
+        val jsonFile = File(path)
+        val tsvFile = File(path.replace(".json", ".tsv")).also { it.createNewFile() }
+        jsonFile.writeText(jsonString)
+        tsvFile.writeText(toQuestionsTsv())
     }
 }
 
