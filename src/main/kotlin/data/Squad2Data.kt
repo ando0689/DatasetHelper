@@ -1,10 +1,12 @@
 package data
 
+import androidx.compose.ui.text.toLowerCase
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.util.*
 
 
 @Serializable
@@ -35,22 +37,32 @@ data class Squad2Data(
         }
     }
 
-    fun toQuestionsTsv(): String {
+    fun toQuestionsTsv(): Pair<String, String> {
         val questions = data
             .flatMap { it.paragraphs }
-            .flatMapIndexed { i, p ->
-                p.qas.filter { !it.isImpossible }.map { "${it.question}\t$i" }
+            .flatMap { p ->
+                val label = p.context.split(" --").first().replace("-- ", "").lowercase()
+                p.qas.filter { !it.isImpossible }.map { qa -> "${qa.question},$label" }
         }
 
-        return "sentence\tlabel\n" + questions.shuffled().joinToString("\n")
+        val all = questions.shuffled()
+        val splitIndex = (all.size * 0.9).toInt()
+        val train = all.subList(0, splitIndex).mapIndexed { i, s -> "$i,$s" }
+        val test = all.subList(splitIndex, all.size).mapIndexed { i, s -> "$i,$s" }
+
+        fun List<String>.convertToString() = ",sentence,label\n" + joinToString("\n")
+
+        return train.convertToString() to test.convertToString()
     }
 
     fun save(){
         val jsonString = Json.encodeToString(serializer(), this)
         val jsonFile = File(path)
-        val tsvFile = File(path.replace(".json", ".tsv")).also { it.createNewFile() }
+        val trainCsv = File(path.replace(".json", "_train_.csv")).also { it.createNewFile() }
+        val testCsv = File(path.replace(".json", "_test_.csv")).also { it.createNewFile() }
         jsonFile.writeText(jsonString)
-        tsvFile.writeText(toQuestionsTsv())
+        trainCsv.writeText(toQuestionsTsv().first)
+        testCsv.writeText(toQuestionsTsv().second)
     }
 }
 
