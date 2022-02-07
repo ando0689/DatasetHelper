@@ -1,12 +1,11 @@
 package data
 
-import androidx.compose.ui.text.toLowerCase
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.Json
 import java.io.File
-import java.util.*
+import java.lang.IllegalStateException
 
 
 @Serializable
@@ -37,7 +36,44 @@ data class Squad2Data(
         }
     }
 
-    fun toQuestionsTsv(): Pair<String, String> {
+    private fun splitTrainTestData(): Pair<Squad2Data, Squad2Data> {
+        val allParagraphs = data.first().paragraphs.onEach {
+            it.qas.shuffled()
+        }
+
+        val splitParagraphs = allParagraphs.map { p ->
+
+            val splits: Map<Answer, Pair<List<Qa>, List<Qa>>> = p.qas.groupBy { it.answers.first() }.mapValues {
+                val splitIndex = (it.value.size * 0.85).toInt()
+                it.value.subList(0, splitIndex) to it.value.subList(splitIndex, it.value.size)
+            }
+
+            val trainQas = splits.flatMap { it.value.first }
+            val testQas = splits.flatMap { it.value.second }
+            Paragraph(p.context, trainQas) to Paragraph(p.context, testQas)
+        }
+
+        val trainParagraphs = splitParagraphs.map { it.first }
+        val testParagraphs = splitParagraphs.map { it.second }
+
+        val trainData = Squad2Data(
+            version = version,
+            data = listOf(
+                Data(trainParagraphs, data.first().title)
+            )
+        )
+
+        val testData = Squad2Data(
+            version = version,
+            data = listOf(
+                Data(testParagraphs, data.first().title)
+            )
+        )
+
+        return trainData to testData
+    }
+
+    private fun toQuestionsCsv(): Pair<String, String> {
         val questions = data
             .flatMap { it.paragraphs }
             .flatMap { p ->
@@ -46,7 +82,7 @@ data class Squad2Data(
         }
 
         val all = questions.shuffled()
-        val splitIndex = (all.size * 0.9).toInt()
+        val splitIndex = (all.size * 0.8).toInt()
         val train = all.subList(0, splitIndex).mapIndexed { i, s -> "$i,$s" }
         val test = all.subList(splitIndex, all.size).mapIndexed { i, s -> "$i,$s" }
 
@@ -56,13 +92,28 @@ data class Squad2Data(
     }
 
     fun save(){
+        if(data.size > 1) throw IllegalStateException("More then one dataset is not supported now")
         val jsonString = Json.encodeToString(serializer(), this)
+
+        val trainTestData = splitTrainTestData()
+        val trainJsonString = Json.encodeToString(serializer(), trainTestData.first)
+        val testJsonString = Json.encodeToString(serializer(), trainTestData.second)
+
         val jsonFile = File(path)
-        val trainCsv = File(path.replace(".json", "_train_.csv")).also { it.createNewFile() }
-        val testCsv = File(path.replace(".json", "_test_.csv")).also { it.createNewFile() }
+
+        val trainJsonFile = File(path.replace(".json", "_train.json")).also { it.createNewFile() }
+        val testJsonFile = File(path.replace(".json", "_test.json")).also { it.createNewFile() }
+
+        val trainCsvFile = File(path.replace(".json", "_train.csv")).also { it.createNewFile() }
+        val testCsvFile = File(path.replace(".json", "_test.csv")).also { it.createNewFile() }
+
         jsonFile.writeText(jsonString)
-        trainCsv.writeText(toQuestionsTsv().first)
-        testCsv.writeText(toQuestionsTsv().second)
+
+        trainJsonFile.writeText(trainJsonString)
+        testJsonFile.writeText(testJsonString)
+
+        trainCsvFile.writeText(toQuestionsCsv().first)
+        testCsvFile.writeText(toQuestionsCsv().second)
     }
 }
 
