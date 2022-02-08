@@ -1,7 +1,5 @@
 import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.*
@@ -104,7 +102,16 @@ fun AnswersScreen(state: PlainQaState, listState: LazyListState, onScreenDataCha
         modifier = Modifier.fillMaxSize(),
         listState = listState,
         header = {
-            CommonRowListHeader(text = state.context)
+            Column {
+                CommonRowListHeader(text = state.context)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row {
+                    Text("Is Answerable")
+                    Switch(checked = state.isImpossible, onCheckedChange = {
+                        state.isImpossible = it
+                    })
+                }
+            }
         },
         name = "Answer",
         description = state.question.text,
@@ -137,8 +144,13 @@ fun GroupedQuestionsScreen(state: GroupQaState, listState: LazyListState, onScre
         header = {
             Column {
                 CommonRowListHeader(modifier = Modifier.padding(bottom = 8.dp), text = state.context)
+                Row {
+                    Text("Is Answerable")
+                    Switch(checked = state.isImpossible, onCheckedChange = {
+                        state.isImpossible = it
+                    })
+                }
                 Text(modifier = Modifier.padding(start = 16.dp, top = 8.dp), text = "Answer", style = MaterialTheme.typography.h6, color = MaterialTheme.myColors.primaryVariant)
-                state.answer.validate()
                 CommonRowItem(stateHolder = state.answer, deleteAllowed = false)
                 Text(modifier = Modifier.padding(start = 16.dp, top = 8.dp), text = "Questions", style = MaterialTheme.typography.h6, color = MaterialTheme.myColors.primaryVariant)
             }

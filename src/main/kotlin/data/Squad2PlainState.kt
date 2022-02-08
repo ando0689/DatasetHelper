@@ -1,6 +1,9 @@
 package data
 
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import squad2.CommonRowState
 import squad2.CommonRowStateHolder
 import java.util.*
@@ -19,15 +22,17 @@ class PlainParagraphState(parent: DataState, paragraph: Paragraph? = null): Para
 
 class PlainQaState(val parent: PlainParagraphState, qa: Qa? = null): CommonRowStateHolder {
     val answers = mutableStateListOf(*qa?.answers?.map { PlainAnswerState(this, it) }?.toTypedArray() ?: emptyArray())
+    var isImpossible by mutableStateOf(qa?.isImpossible ?: false)
     var question = CommonRowState(value = qa?.question ?: "").also { setNoteIfNoAnswers(it) }
     val id = if(qa?.id.isNullOrBlank()) UUID.randomUUID().toString() else qa?.id!!
     val context: String
         get() = parent.context.text
 
     fun toQa() = Qa(
-        answers = answers.map { it.toAnswer() },
+        answers = if(isImpossible) emptyList() else answers.map { it.toAnswer() },
+        plausible_answers = if(isImpossible) answers.map { it.toAnswer() } else emptyList(),
         id = id,
-        isImpossible = answers.isEmpty(),
+        isImpossible = isImpossible,
         question = question.text
     )
 

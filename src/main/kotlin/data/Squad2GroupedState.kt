@@ -24,6 +24,12 @@ class GroupQaState(val parent: GroupParagraphState, qas: List<Qa>? = null, answe
     var note by mutableStateOf<String?>(null)
     val answer = GroupedAnswerState(this, answer)
     val questions = mutableStateListOf(*qas?.map { GroupQuestionItemState(this, it) }?.toTypedArray() ?: arrayOf(GroupQuestionItemState(this)))
+    var isImpossible: Boolean
+        get() = questions.firstOrNull()?.isImpossible ?: false
+        set(value) {
+            questions.forEach { it.isImpossible = value }
+        }
+
 
     val context: String
         get() = parent.context.text
@@ -57,11 +63,15 @@ class GroupQaState(val parent: GroupParagraphState, qas: List<Qa>? = null, answe
 class GroupQuestionItemState(val parent: GroupQaState, qa: Qa? = null): CommonRowStateHolder {
     var question = CommonRowState(value = qa?.question ?: "")
     val id = if(qa?.id.isNullOrBlank()) UUID.randomUUID().toString() else qa?.id!!
+    var isImpossible by mutableStateOf(qa?.isImpossible ?: false)
+
+    fun answers(answer: GroupedAnswerState) = if(answer.text.text.isNotBlank()) listOf(answer.toAnswer()) else emptyList()
 
     fun toQa(answer: GroupedAnswerState) = Qa(
-        answers = if(answer.text.text.isNotBlank()) listOf(answer.toAnswer()) else emptyList(),
+        answers = if(isImpossible) answers(answer) else emptyList(),
+        plausible_answers = if(isImpossible) emptyList() else answers(answer),
         id = id,
-        isImpossible = answer.text.text.isBlank(),
+        isImpossible = isImpossible,
         question = question.text
     )
 
