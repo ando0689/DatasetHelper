@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
@@ -105,12 +106,7 @@ fun AnswersScreen(state: PlainQaState, listState: LazyListState, onScreenDataCha
             Column {
                 CommonRowListHeader(text = state.context)
                 Spacer(modifier = Modifier.height(8.dp))
-                Row {
-                    Text("Is Answerable")
-                    Switch(checked = state.isImpossible, onCheckedChange = {
-                        state.isImpossible = it
-                    })
-                }
+                IsImpossibleSwitch(state.isImpossible) { state.isImpossible = it }
             }
         },
         name = "Answer",
@@ -144,12 +140,7 @@ fun GroupedQuestionsScreen(state: GroupQaState, listState: LazyListState, onScre
         header = {
             Column {
                 CommonRowListHeader(modifier = Modifier.padding(bottom = 8.dp), text = state.context)
-                Row {
-                    Text("Is Answerable")
-                    Switch(checked = state.isImpossible, onCheckedChange = {
-                        state.isImpossible = it
-                    })
-                }
+                IsImpossibleSwitch(state.isImpossible) { state.isImpossible = it }
                 Text(modifier = Modifier.padding(start = 16.dp, top = 8.dp), text = "Answer", style = MaterialTheme.typography.h6, color = MaterialTheme.myColors.primaryVariant)
                 CommonRowItem(stateHolder = state.answer, deleteAllowed = false)
                 Text(modifier = Modifier.padding(start = 16.dp, top = 8.dp), text = "Questions", style = MaterialTheme.typography.h6, color = MaterialTheme.myColors.primaryVariant)
@@ -160,6 +151,18 @@ fun GroupedQuestionsScreen(state: GroupQaState, listState: LazyListState, onScre
         onCreateNewItem = { GroupQuestionItemState(state) }) { }
 }
 
+@Composable
+private fun IsImpossibleSwitch(isImpossible: Boolean, onChanged: (Boolean) -> Unit){
+    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.End) {
+        Text("Is Impossible")
+        Spacer(modifier = Modifier.width(8.dp))
+        Switch(checked = isImpossible, onCheckedChange = onChanged, colors = SwitchDefaults.colors(
+            checkedThumbColor = MaterialTheme.myColors.primary
+        ))
+    }
+}
 
 @Composable
 fun ScreenAppBar(state: CommonRowStateHolder?, onScreenDataChange: (CommonRowStateHolder?) -> Unit){

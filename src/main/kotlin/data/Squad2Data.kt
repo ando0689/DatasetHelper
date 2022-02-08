@@ -104,16 +104,16 @@ data class Squad2Data(
 //        val trainJsonFile = File(path.replace(".json", "_train.json")).also { it.createNewFile() }
 //        val testJsonFile = File(path.replace(".json", "_test.json")).also { it.createNewFile() }
 
-        val trainCsvFile = File(path.replace(".json", "_train.csv")).also { it.createNewFile() }
-        val testCsvFile = File(path.replace(".json", "_test.csv")).also { it.createNewFile() }
+//        val trainCsvFile = File(path.replace(".json", "_train.csv")).also { it.createNewFile() }
+//        val testCsvFile = File(path.replace(".json", "_test.csv")).also { it.createNewFile() }
 
         jsonFile.writeText(jsonString)
 //
 //        trainJsonFile.writeText(trainJsonString)
 //        testJsonFile.writeText(testJsonString)
 
-        trainCsvFile.writeText(toQuestionsCsv().first)
-        testCsvFile.writeText(toQuestionsCsv().second)
+//        trainCsvFile.writeText(toQuestionsCsv().first)
+//        testCsvFile.writeText(toQuestionsCsv().second)
     }
 }
 
