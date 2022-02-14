@@ -5,7 +5,7 @@ import squad2.CommonRowState
 import squad2.CommonRowStateHolder
 import java.io.File
 
-class Squad2DataState(squad2Data: Squad2Data? = null, val groupQuestions: Boolean = true): CommonRowStateHolder {
+class Squad2DataState(squad2Data: Squad2Data? = null, val groupQuestions: Boolean = false): CommonRowStateHolder {
     val path = CommonRowState(value = squad2Data?.path ?: "")
     val data = mutableStateListOf(*squad2Data?.data?.map { DataState(this, it) }?.toTypedArray() ?: emptyArray())
 

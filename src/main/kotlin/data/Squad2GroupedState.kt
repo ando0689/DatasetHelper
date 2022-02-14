@@ -67,13 +67,16 @@ class GroupQuestionItemState(val parent: GroupQaState, qa: Qa? = null): CommonRo
 
     fun answers(answer: GroupedAnswerState) = if(answer.text.text.isNotBlank()) listOf(answer.toAnswer()) else emptyList()
 
-    fun toQa(answer: GroupedAnswerState) = Qa(
-        answers = if(isImpossible) answers(answer) else emptyList(),
-        plausible_answers = if(isImpossible) emptyList() else answers(answer),
-        id = id,
-        isImpossible = isImpossible,
-        question = question.text
-    )
+    fun toQa(answer: GroupedAnswerState): Qa {
+        val qa = Qa(
+            answers = if(isImpossible) emptyList() else answers(answer),
+            plausible_answers = if(isImpossible) answers(answer) else emptyList(),
+            id = id,
+            isImpossible = isImpossible,
+            question = question.text
+        )
+        return qa
+    }
 
     fun save(){
         parent.save()

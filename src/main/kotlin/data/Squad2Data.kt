@@ -1,11 +1,13 @@
 package data
 
+import androidx.compose.ui.text.toLowerCase
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.lang.IllegalStateException
+import java.util.*
 
 
 @Serializable
@@ -73,13 +75,43 @@ data class Squad2Data(
         return trainData to testData
     }
 
-    private fun toQuestionsCsv(): Pair<String, String> {
-        val questions = data
-            .flatMap { it.paragraphs }
-            .flatMap { p ->
-                val label = p.context.split(" --").first().replace("-- ", "").lowercase()
-                p.qas.filter { !it.isImpossible }.map { qa -> "${qa.question},$label" }
+
+    fun save(){
+        saveMainJson()
+        saveQuestionsJsonl()
+
+//        val trainTestData = splitTrainTestData()
+//        val trainJsonString = Json.encodeToString(serializer(), trainTestData.first)
+//        val testJsonString = Json.encodeToString(serializer(), trainTestData.second)
+
+//        val trainJsonFile = File(path.replace(".json", "_train.json")).also { it.createNewFile() }
+//        val testJsonFile = File(path.replace(".json", "_test.json")).also { it.createNewFile() }
+
+//        trainJsonFile.writeText(trainJsonString)
+//        testJsonFile.writeText(testJsonString)
+    }
+
+    fun saveQuestionsJsonl(){
+        val questions = data.flatMap { d -> d.paragraphs.flatMap { p -> p.qas.map { q -> q.question to d.title.lowercase() } } }
+
+        val all = questions.shuffled()
+        val splitIndex = (all.size * 0.8).toInt()
+        val train = all.subList(0, splitIndex)
+        val test = all.subList(splitIndex, all.size)
+
+        fun List<Pair<String, String>>.convertToJsonl() = joinToString("\n") {
+            "{\"sentence1\": \"${it.first}\", \"label\": \"${it.second}\"}"
         }
+
+        val trainFile = File(path.replace(".json", "_train.jsonl")).also { it.createNewFile() }
+        val testFile = File(path.replace(".json", "_test.jsonl")).also { it.createNewFile() }
+
+        trainFile.writeText(train.convertToJsonl())
+        testFile.writeText(test.convertToJsonl())
+    }
+
+    fun saveQuestionsCsv(){
+        val questions = data.flatMap { d -> d.paragraphs.flatMap { p -> p.qas.map { q -> "${q.question},${d.title}" } } }
 
         val all = questions.shuffled()
         val splitIndex = (all.size * 0.8).toInt()
@@ -88,32 +120,23 @@ data class Squad2Data(
 
         fun List<String>.convertToString() = ",sentence,label\n" + joinToString("\n")
 
-        return train.convertToString() to test.convertToString()
+        val trainCsvFile = File(path.replace(".json", "_train.csv")).also { it.createNewFile() }
+        val testCsvFile = File(path.replace(".json", "_test.csv")).also { it.createNewFile() }
+
+        trainCsvFile.writeText(train.convertToString())
+        testCsvFile.writeText(test.convertToString())
     }
 
-    fun save(){
-//        if(data.size > 1) throw IllegalStateException("More then one dataset is not supported now")
+    fun saveHuggingFacesCsv(){
+        val cscFile = File(path.replace(".json", "_hf.jsonl")).also { it.createNewFile() }
+        val text = HuggingFaceData.fromSquad(this).joinToString("\n") { it.toTsv() }
+        cscFile.writeText(text)
+    }
+
+    private fun saveMainJson(){
         val jsonString = Json.encodeToString(serializer(), this)
-
-//        val trainTestData = splitTrainTestData()
-//        val trainJsonString = Json.encodeToString(serializer(), trainTestData.first)
-//        val testJsonString = Json.encodeToString(serializer(), trainTestData.second)
-
         val jsonFile = File(path)
-
-//        val trainJsonFile = File(path.replace(".json", "_train.json")).also { it.createNewFile() }
-//        val testJsonFile = File(path.replace(".json", "_test.json")).also { it.createNewFile() }
-
-//        val trainCsvFile = File(path.replace(".json", "_train.csv")).also { it.createNewFile() }
-//        val testCsvFile = File(path.replace(".json", "_test.csv")).also { it.createNewFile() }
-
         jsonFile.writeText(jsonString)
-//
-//        trainJsonFile.writeText(trainJsonString)
-//        testJsonFile.writeText(testJsonString)
-
-//        trainCsvFile.writeText(toQuestionsCsv().first)
-//        testCsvFile.writeText(toQuestionsCsv().second)
     }
 }
 
@@ -132,7 +155,7 @@ data class Paragraph(
 @Serializable
 data class Qa(
     val answers: List<Answer>,
-    val plausible_answers: List<Answer>,
+    val plausible_answers: List<Answer> = emptyList(),
     val id: String,
     @SerialName("is_impossible")
     val isImpossible: Boolean,

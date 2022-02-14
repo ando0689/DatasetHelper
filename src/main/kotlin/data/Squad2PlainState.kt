@@ -28,13 +28,17 @@ class PlainQaState(val parent: PlainParagraphState, qa: Qa? = null): CommonRowSt
     val context: String
         get() = parent.context.text
 
-    fun toQa() = Qa(
-        answers = if(isImpossible) emptyList() else answers.map { it.toAnswer() },
-        plausible_answers = if(isImpossible) answers.map { it.toAnswer() } else emptyList(),
-        id = id,
-        isImpossible = isImpossible,
-        question = question.text
-    )
+    fun toQa():Qa {
+       val qa = Qa(
+            answers = if(isImpossible) emptyList() else answers.map { it.toAnswer() },
+            plausible_answers = if(isImpossible) answers.map { it.toAnswer() } else emptyList(),
+            id = id,
+            isImpossible = isImpossible,
+            question = question.text
+        )
+
+        return qa
+    }
 
     fun setNoteIfNoAnswers() = setNoteIfNoAnswers(question)
 
