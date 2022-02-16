@@ -8,7 +8,7 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import java.lang.IllegalStateException
 import java.util.*
-
+import kotlin.math.roundToInt
 
 @Serializable
 data class Squad2Data(
@@ -39,60 +39,79 @@ data class Squad2Data(
     }
 
     private fun splitTrainTestData(): Pair<Squad2Data, Squad2Data> {
-        val allParagraphs = data.first().paragraphs.onEach {
-            it.qas.shuffled()
-        }
 
-        val splitParagraphs = allParagraphs.map { p ->
-
-            val splits: Map<Answer, Pair<List<Qa>, List<Qa>>> = p.qas.groupBy { it.answers.first() }.mapValues {
-                val splitIndex = (it.value.size * 0.85).toInt()
-                it.value.subList(0, splitIndex) to it.value.subList(splitIndex, it.value.size)
+        fun Data.split(): Pair<Data, Data> {
+            val allParagraphs = paragraphs.onEach {
+                it.qas.shuffled()
             }
 
-            val trainQas = splits.flatMap { it.value.first }
-            val testQas = splits.flatMap { it.value.second }
-            Paragraph(p.context, trainQas) to Paragraph(p.context, testQas)
+            val splitParagraphs = allParagraphs.map { p ->
+
+                val splits: Map<Answer, Pair<List<Qa>, List<Qa>>> = p.qas.groupBy { it.answers.first() }.mapValues {
+                    val splitIndex = (it.value.size * 0.8).roundToInt()
+                    it.value.subList(0, splitIndex) to it.value.subList(splitIndex, it.value.size)
+                }
+
+                val trainQas = splits.flatMap { it.value.first }
+                val testQas = splits.flatMap { it.value.second }
+                p.copy(qas = trainQas) to p.copy(qas = testQas)
+            }
+
+//            val splitParagraphs: List<Pair<Paragraph, Paragraph>> = allParagraphs.map { p ->
+//                val splitIndex = (p.qas.size * 0.8).toInt()
+//                val trainQas = p.qas.subList(0, splitIndex)
+//                val testQas = p.qas.subList(splitIndex, p.qas.size)
+//
+//                p.copy(qas = trainQas) to p.copy(qas = testQas)
+//            }
+
+            val trainParagraphs = splitParagraphs.map { it.first }
+            val testParagraphs = splitParagraphs.map { it.second }
+
+            return copy(paragraphs = trainParagraphs) to copy(paragraphs = testParagraphs)
         }
 
-        val trainParagraphs = splitParagraphs.map { it.first }
-        val testParagraphs = splitParagraphs.map { it.second }
+        val splitData: List<Pair<Data, Data>> = data.map { it.split() }
 
-        val trainData = Squad2Data(
-            version = version,
-            data = listOf(
-                Data(trainParagraphs, data.first().title)
-            )
-        )
+        val trainData = splitData.map { it.first }
+        val testData = splitData.map { it.second }
 
-        val testData = Squad2Data(
-            version = version,
-            data = listOf(
-                Data(testParagraphs, data.first().title)
-            )
-        )
+        return copy(data = trainData) to copy(data = testData)
 
-        return trainData to testData
+//        val splitParagraphs = allParagraphs.map { p ->
+//
+//            val splits: Map<Answer, Pair<List<Qa>, List<Qa>>> = p.qas.groupBy { it.answers.first() }.mapValues {
+//                val splitIndex = (it.value.size * 0.85).toInt()
+//                it.value.subList(0, splitIndex) to it.value.subList(splitIndex, it.value.size)
+//            }
+//
+//            val trainQas = splits.flatMap { it.value.first }
+//            val testQas = splits.flatMap { it.value.second }
+//            Paragraph(p.context, trainQas) to Paragraph(p.context, testQas)
+//        }
     }
 
 
     fun save(){
         saveMainJson()
         saveQuestionsJsonl()
+        saveQuestionAnswersSplit()
+    }
 
-//        val trainTestData = splitTrainTestData()
-//        val trainJsonString = Json.encodeToString(serializer(), trainTestData.first)
-//        val testJsonString = Json.encodeToString(serializer(), trainTestData.second)
+    fun saveQuestionAnswersSplit(){
+        val trainTestData = splitTrainTestData()
+        val trainJsonString = Json.encodeToString(serializer(), trainTestData.first)
+        val testJsonString = Json.encodeToString(serializer(), trainTestData.second)
 
-//        val trainJsonFile = File(path.replace(".json", "_train.json")).also { it.createNewFile() }
-//        val testJsonFile = File(path.replace(".json", "_test.json")).also { it.createNewFile() }
+        val trainJsonFile = File(path.replace(".json", "qa_train.json")).also { it.createNewFile() }
+        val testJsonFile = File(path.replace(".json", "qa_test.json")).also { it.createNewFile() }
 
-//        trainJsonFile.writeText(trainJsonString)
-//        testJsonFile.writeText(testJsonString)
+        trainJsonFile.writeText(trainJsonString)
+        testJsonFile.writeText(testJsonString)
     }
 
     fun saveQuestionsJsonl(){
-        val questions = data.flatMap { d -> d.paragraphs.flatMap { p -> p.qas.map { q -> q.question to d.title.lowercase() } } }
+        val questions = data.flatMap { d -> d.paragraphs.flatMap { p -> p.qas.filter { !it.isImpossible }.map { q -> q.question to d.title.lowercase() } } }
 
         val all = questions.shuffled()
         val splitIndex = (all.size * 0.8).toInt()
@@ -103,8 +122,8 @@ data class Squad2Data(
             "{\"sentence1\": \"${it.first}\", \"label\": \"${it.second}\"}"
         }
 
-        val trainFile = File(path.replace(".json", "_train.jsonl")).also { it.createNewFile() }
-        val testFile = File(path.replace(".json", "_test.jsonl")).also { it.createNewFile() }
+        val trainFile = File(path.replace(".json", "class_hf_train.json")).also { it.createNewFile() }
+        val testFile = File(path.replace(".json", "class_hf_test.json")).also { it.createNewFile() }
 
         trainFile.writeText(train.convertToJsonl())
         testFile.writeText(test.convertToJsonl())

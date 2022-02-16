@@ -172,9 +172,7 @@ fun ScreenAppBar(state: CommonRowStateHolder?, onScreenDataChange: (CommonRowSta
             additionalContent = {
                 Text(text = "Group Questions")
                 Switch(
-
                     checked = state.groupQuestions, onCheckedChange = {
-                        state.save()
                         val data = state.toSquad2Data()
                         val newState = Squad2DataState(data, !state.groupQuestions)
                         onScreenDataChange.invoke(newState)
