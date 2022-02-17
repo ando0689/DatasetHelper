@@ -77,25 +77,14 @@ data class Squad2Data(
         val testData = splitData.map { it.second }
 
         return copy(data = trainData) to copy(data = testData)
-
-//        val splitParagraphs = allParagraphs.map { p ->
-//
-//            val splits: Map<Answer, Pair<List<Qa>, List<Qa>>> = p.qas.groupBy { it.answers.first() }.mapValues {
-//                val splitIndex = (it.value.size * 0.85).toInt()
-//                it.value.subList(0, splitIndex) to it.value.subList(splitIndex, it.value.size)
-//            }
-//
-//            val trainQas = splits.flatMap { it.value.first }
-//            val testQas = splits.flatMap { it.value.second }
-//            Paragraph(p.context, trainQas) to Paragraph(p.context, testQas)
-//        }
     }
 
 
     fun save(){
         saveMainJson()
         saveQuestionsJsonl()
-        saveQuestionAnswersSplit()
+//        saveQuestionAnswersSplit()
+        saveQuestionAnswersSplitHF()
     }
 
     fun saveQuestionAnswersSplit(){
@@ -103,8 +92,20 @@ data class Squad2Data(
         val trainJsonString = Json.encodeToString(serializer(), trainTestData.first)
         val testJsonString = Json.encodeToString(serializer(), trainTestData.second)
 
-        val trainJsonFile = File(path.replace(".json", "qa_train.json")).also { it.createNewFile() }
-        val testJsonFile = File(path.replace(".json", "qa_test.json")).also { it.createNewFile() }
+        val trainJsonFile = File(path.replace(".json", "_qa_train.json")).also { it.createNewFile() }
+        val testJsonFile = File(path.replace(".json", "_qa_test.json")).also { it.createNewFile() }
+
+        trainJsonFile.writeText(trainJsonString)
+        testJsonFile.writeText(testJsonString)
+    }
+
+    fun saveQuestionAnswersSplitHF(){
+        val trainTestData = splitTrainTestData()
+        val trainJsonString = HuggingFaceData.fromSquad(trainTestData.first).toJsonString()
+        val testJsonString = HuggingFaceData.fromSquad(trainTestData.second).toJsonString()
+
+        val trainJsonFile = File(path.replace(".json", "_hf_train.json")).also { it.createNewFile() }
+        val testJsonFile = File(path.replace(".json", "_hf_test.json")).also { it.createNewFile() }
 
         trainJsonFile.writeText(trainJsonString)
         testJsonFile.writeText(testJsonString)
@@ -122,8 +123,8 @@ data class Squad2Data(
             "{\"sentence1\": \"${it.first}\", \"label\": \"${it.second}\"}"
         }
 
-        val trainFile = File(path.replace(".json", "class_hf_train.json")).also { it.createNewFile() }
-        val testFile = File(path.replace(".json", "class_hf_test.json")).also { it.createNewFile() }
+        val trainFile = File(path.replace(".json", "_class_hf_train.json")).also { it.createNewFile() }
+        val testFile = File(path.replace(".json", "_class_hf_test.json")).also { it.createNewFile() }
 
         trainFile.writeText(train.convertToJsonl())
         testFile.writeText(test.convertToJsonl())
@@ -144,12 +145,6 @@ data class Squad2Data(
 
         trainCsvFile.writeText(train.convertToString())
         testCsvFile.writeText(test.convertToString())
-    }
-
-    fun saveHuggingFacesCsv(){
-        val cscFile = File(path.replace(".json", "_hf.jsonl")).also { it.createNewFile() }
-        val text = HuggingFaceData.fromSquad(this).joinToString("\n") { it.toTsv() }
-        cscFile.writeText(text)
     }
 
     private fun saveMainJson(){
